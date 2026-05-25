@@ -24,13 +24,13 @@ function RichText({ text }: { text: string }) {
 
 function TapHint() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-8 pb-16 pt-10">
+    <div className="flex w-full flex-col items-center">
       <Hand
         className="h-16 w-16 text-gray-200"
         strokeWidth={1.25}
         aria-hidden
       />
-      <p className="mt-4 text-sm text-gray-300">タップして表示</p>
+      <p className="mt-4 text-center text-sm text-gray-300">タップして表示</p>
     </div>
   );
 }
@@ -101,7 +101,7 @@ export function VocabFlashcard({ items }: VocabFlashcardProps) {
         </div>
 
         <div
-          className="relative flex flex-1 flex-col px-3 pt-6"
+          className="relative flex w-full flex-1 flex-col px-3 pt-6"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
@@ -128,19 +128,17 @@ export function VocabFlashcard({ items }: VocabFlashcardProps) {
           <button
             type="button"
             onClick={() => setIsRevealed((value) => !value)}
-            className="flex flex-1 flex-col overflow-hidden rounded-3xl bg-white text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+            className="flex w-full flex-1 flex-col items-center overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
           >
             {!isRevealed ? (
-              <>
-                <div className="flex flex-1 items-center justify-center px-8 py-16">
-                  <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                    {item.word}
-                  </h1>
-                </div>
+              <div className="flex w-full flex-1 flex-col items-center justify-center gap-10 px-8 py-16">
+                <h1 className="w-full text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                  {item.word}
+                </h1>
                 <TapHint />
-              </>
+              </div>
             ) : (
-              <div className="animate-[fadeIn_0.25s_ease-out] px-8 py-10">
+              <div className="w-full animate-[fadeIn_0.25s_ease-out] px-8 py-10 text-left">
                 <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                   {item.word}
                 </h1>
