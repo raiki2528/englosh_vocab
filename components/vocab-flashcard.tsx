@@ -37,10 +37,15 @@ function TapHint() {
 
 type VocabFlashcardProps = {
   items: VocabularyItem[];
+  index: number;
+  onIndexChange: (index: number) => void;
 };
 
-export function VocabFlashcard({ items }: VocabFlashcardProps) {
-  const [index, setIndex] = useState(0);
+export function VocabFlashcard({
+  items,
+  index,
+  onIndexChange,
+}: VocabFlashcardProps) {
   const [isRevealed, setIsRevealed] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
@@ -48,12 +53,12 @@ export function VocabFlashcard({ items }: VocabFlashcardProps) {
   const total = items.length;
 
   const goPrev = useCallback(() => {
-    setIndex((current) => (current > 0 ? current - 1 : current));
-  }, []);
+    onIndexChange(index > 0 ? index - 1 : index);
+  }, [index, onIndexChange]);
 
   const goNext = useCallback(() => {
-    setIndex((current) => (current < total - 1 ? current + 1 : current));
-  }, [total]);
+    onIndexChange(index < total - 1 ? index + 1 : index);
+  }, [index, onIndexChange, total]);
 
   useEffect(() => {
     setIsRevealed(false);
@@ -75,121 +80,101 @@ export function VocabFlashcard({ items }: VocabFlashcardProps) {
     else goPrev();
   };
 
-  if (!item) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-6">
-        <p className="text-center text-sm leading-relaxed text-gray-500">
-          表示できる単語がありません。
-          <br />
-          テーブルにデータがあるのにこの画面になる場合、RLS（Row Level
-          Security）で anon からの読み取りが拒否されている可能性があります。
-          <br />
-          <code className="mt-2 inline-block text-xs text-gray-600">
-            supabase/rls-allow-public-read.sql
-          </code>
-          を Supabase の SQL Editor で実行してください。
-        </p>
-      </div>
-    );
-  }
+  if (!item) return null;
 
   return (
-    <div className="min-h-dvh bg-gray-50">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
-        <div className="flex justify-center pt-4">
-          <div className="h-1 w-10 rounded-full bg-gray-300" />
-        </div>
+    <div className="flex h-full flex-col">
+      <div className="flex justify-center pt-4">
+        <div className="h-1 w-10 rounded-full bg-gray-300" />
+      </div>
 
-        <div
-          className="relative flex w-full flex-1 flex-col px-3 pt-6"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+      <div
+        className="relative flex w-full flex-1 flex-col px-3 pt-6"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <button
+          type="button"
+          onClick={goPrev}
+          disabled={index === 0}
+          aria-label="前の単語"
+          className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-lg bg-white/70 p-2 text-gray-400 backdrop-blur-sm transition enabled:hover:text-gray-700 disabled:opacity-30"
         >
-          <button
-            type="button"
-            onClick={goPrev}
-            disabled={index === 0}
-            aria-label="前の単語"
-            className="absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-lg bg-white/70 p-2 text-gray-400 backdrop-blur-sm transition enabled:hover:text-gray-700 disabled:opacity-30"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+          <ChevronLeft className="h-6 w-6" />
+        </button>
 
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={index >= total - 1}
-            aria-label="次の単語"
-            className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-l-lg bg-white/70 p-2 text-gray-400 backdrop-blur-sm transition enabled:hover:text-gray-700 disabled:opacity-30"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
+        <button
+          type="button"
+          onClick={goNext}
+          disabled={index >= total - 1}
+          aria-label="次の単語"
+          className="absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-l-lg bg-white/70 p-2 text-gray-400 backdrop-blur-sm transition enabled:hover:text-gray-700 disabled:opacity-30"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
 
-          <button
-            type="button"
-            onClick={() => setIsRevealed((value) => !value)}
-            className="flex w-full flex-1 flex-col items-center overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
-          >
-            {!isRevealed ? (
-              <div className="flex w-full flex-1 flex-col items-center justify-center gap-10 px-8 py-16">
-                <h1 className="w-full text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                  {item.word}
-                </h1>
-                <TapHint />
-              </div>
-            ) : (
-              <div className="w-full animate-[fadeIn_0.25s_ease-out] px-8 py-10 text-left">
-                <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                  {item.word}
-                </h1>
+        <button
+          type="button"
+          onClick={() => setIsRevealed((value) => !value)}
+          className="flex w-full flex-1 flex-col items-center overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+        >
+          {!isRevealed ? (
+            <div className="flex w-full flex-1 flex-col items-center justify-center gap-10 px-8 py-16">
+              <h1 className="w-full text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                {item.word}
+              </h1>
+              <TapHint />
+            </div>
+          ) : (
+            <div className="w-full animate-[fadeIn_0.25s_ease-out] px-8 py-10 text-left">
+              <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+                {item.word}
+              </h1>
 
-                {item.meaning ? (
-                  <p className="mt-6 text-center text-lg leading-relaxed text-gray-900">
-                    {item.meaning}
-                  </p>
+              {item.meaning ? (
+                <p className="mt-6 text-center text-lg leading-relaxed text-gray-900">
+                  {item.meaning}
+                </p>
+              ) : null}
+
+              <div className="mt-10 space-y-8 text-[15px] leading-7 text-gray-800">
+                {item.example1 ? (
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-gray-400">
+                      例文 1
+                    </p>
+                    <p>
+                      <RichText text={item.example1} />
+                    </p>
+                  </div>
                 ) : null}
 
-                <div className="mt-10 space-y-8 text-[15px] leading-7 text-gray-800">
-                  {item.example1 ? (
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-gray-400">
-                        例文 1
-                      </p>
-                      <p>
-                        <RichText text={item.example1} />
-                      </p>
-                    </div>
-                  ) : null}
-
-                  {item.example2 ? (
-                    <div>
-                      <p className="mb-2 text-xs font-medium text-gray-400">
-                        例文 2
-                      </p>
-                      <p>
-                        <RichText text={item.example2} />
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                {item.memo ? (
-                  <div className="mt-8 rounded-2xl bg-gray-100 px-5 py-4 text-sm leading-7 text-gray-700">
+                {item.example2 ? (
+                  <div>
                     <p className="mb-2 text-xs font-medium text-gray-400">
-                      memo
+                      例文 2
                     </p>
-                    {item.memo}
+                    <p>
+                      <RichText text={item.example2} />
+                    </p>
                   </div>
                 ) : null}
               </div>
-            )}
-          </button>
-        </div>
 
-        <footer className="px-6 pb-8 pt-2 text-center text-xs text-gray-400">
-          {index + 1} / {total}
-        </footer>
+              {item.memo ? (
+                <div className="mt-8 rounded-2xl bg-gray-100 px-5 py-4 text-sm leading-7 text-gray-700">
+                  <p className="mb-2 text-xs font-medium text-gray-400">memo</p>
+                  {item.memo}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </button>
       </div>
+
+      <footer className="px-6 pb-4 pt-2 text-center text-xs text-gray-400">
+        {index + 1} / {total}
+      </footer>
     </div>
   );
 }

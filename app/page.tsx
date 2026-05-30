@@ -1,4 +1,4 @@
-import { VocabFlashcard } from "@/components/vocab-flashcard";
+import { VocabApp } from "@/components/vocab-app";
 import { fetchVocabulary } from "@/lib/vocabulary";
 
 export const dynamic = "force-dynamic";
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   try {
     const items = await fetchVocabulary();
-    return <VocabFlashcard items={items} />;
+    return <VocabApp items={items} />;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "不明なエラーが発生しました。";
