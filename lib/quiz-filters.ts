@@ -2,51 +2,21 @@ import type { VocabularyItem } from "@/lib/vocabulary";
 import type { ProgressStore } from "@/lib/word-progress";
 import { getMistakeCount } from "@/lib/word-progress";
 
-export type QuizMode =
-  | "all"
-  | "mistake-1-3"
-  | "mistake-4plus"
-  | "mistake-0"
-  | "this-week"
-  | "this-month";
+export type QuizMode = "all" | "mistake-1-3";
 
-export type QuizModeOption = {
-  id: QuizMode;
-  label: string;
-  description: string;
+export type DateRange = {
+  start: string;
+  end: string;
 };
 
-export const QUIZ_MODES: QuizModeOption[] = [
-  {
-    id: "all",
-    label: "全単語",
-    description: "登録されている単語からランダム",
-  },
-  {
-    id: "mistake-1-3",
-    label: "× 1〜3",
-    description: "罰が1〜3個の単語だけ",
-  },
-  {
-    id: "mistake-4plus",
-    label: "× 4以上",
-    description: "苦手な単語だけ",
-  },
-  {
-    id: "mistake-0",
-    label: "× 0",
-    description: "まだ罰がついていない単語",
-  },
-  {
-    id: "this-week",
-    label: "今週",
-    description: "今週追加した単語",
-  },
-  {
-    id: "this-month",
-    label: "今月",
-    description: "今月追加した単語",
-  },
+export type QuizFilterOptions = {
+  mode: QuizMode;
+  dateRange?: DateRange;
+};
+
+export const QUIZ_MODES: { id: QuizMode; label: string }[] = [
+  { id: "all", label: "全単語" },
+  { id: "mistake-1-3", label: "× 1〜3" },
 ];
 
 function startOfWeek(date: Date): Date {
@@ -58,45 +28,83 @@ function startOfWeek(date: Date): Date {
   return d;
 }
 
+function endOfWeek(date: Date): Date {
+  const start = startOfWeek(date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+  return end;
+}
+
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
-function isOnOrAfter(isoDate: string, boundary: Date): boolean {
-  if (!isoDate) return false;
-  const parsed = new Date(isoDate);
-  if (Number.isNaN(parsed.getTime())) return false;
-  return parsed >= boundary;
+function endOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+}
+
+function toDateInputValue(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseDateInput(value: string, endOfDay = false): Date | null {
+  if (!value) return null;
+  const parsed = new Date(`${value}T${endOfDay ? "23:59:59" : "00:00:00"}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+export function getThisWeekRange(): DateRange {
+  const now = new Date();
+  return {
+    start: toDateInputValue(startOfWeek(now)),
+    end: toDateInputValue(endOfWeek(now)),
+  };
+}
+
+export function getThisMonthRange(): DateRange {
+  const now = new Date();
+  return {
+    start: toDateInputValue(startOfMonth(now)),
+    end: toDateInputValue(endOfMonth(now)),
+  };
+}
+
+function isWithinDateRange(isoDate: string, range: DateRange): boolean {
+  if (!range.start || !range.end) return true;
+
+  const start = parseDateInput(range.start);
+  const end = parseDateInput(range.end, true);
+  const created = new Date(isoDate);
+
+  if (!start || !end || Number.isNaN(created.getTime())) return false;
+  if (start > end) return created >= end && created <= start;
+  return created >= start && created <= end;
 }
 
 export function filterQuizItems(
   items: VocabularyItem[],
-  mode: QuizMode,
+  options: QuizFilterOptions,
   progress: ProgressStore,
 ): VocabularyItem[] {
-  const now = new Date();
-  const weekStart = startOfWeek(now);
-  const monthStart = startOfMonth(now);
+  const { mode, dateRange } = options;
 
   return items.filter((item) => {
     const mistakes = getMistakeCount(progress, item.id);
 
-    switch (mode) {
-      case "all":
-        return true;
-      case "mistake-1-3":
-        return mistakes >= 1 && mistakes <= 3;
-      case "mistake-4plus":
-        return mistakes >= 4;
-      case "mistake-0":
-        return mistakes === 0;
-      case "this-week":
-        return isOnOrAfter(item.createdAt, weekStart);
-      case "this-month":
-        return isOnOrAfter(item.createdAt, monthStart);
-      default:
-        return true;
+    if (mode === "mistake-1-3" && (mistakes < 1 || mistakes > 3)) {
+      return false;
     }
+
+    if (dateRange?.start && dateRange?.end) {
+      return isWithinDateRange(item.createdAt, dateRange);
+    }
+
+    return true;
   });
 }
 
@@ -111,5 +119,6 @@ export function shuffleItems<T>(items: T[]): T[] {
 
 export function isThisWeek(isoDate: string): boolean {
   if (!isoDate) return false;
-  return isOnOrAfter(isoDate, startOfWeek(new Date()));
+  const range = getThisWeekRange();
+  return isWithinDateRange(isoDate, range);
 }
