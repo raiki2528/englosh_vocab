@@ -7,7 +7,7 @@ import { getMistakeCount } from "@/lib/word-progress";
 import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 
-type SortKey = "newest" | "mistakes" | "alpha";
+type SortKey = "newest" | "mistakes";
 
 type VocabListProps = {
   items: VocabularyItem[];
@@ -54,9 +54,12 @@ export function VocabList({
           getMistakeCount(progress, b.item.id) -
           getMistakeCount(progress, a.item.id);
         if (diff !== 0) return diff;
-        return a.item.word.localeCompare(b.item.word, "en");
+        return (
+          new Date(b.item.createdAt).getTime() -
+          new Date(a.item.createdAt).getTime()
+        );
       }
-      return a.item.word.localeCompare(b.item.word, "en");
+      return 0;
     });
     return copy;
   }, [items, progress, sortKey]);
@@ -81,7 +84,6 @@ export function VocabList({
             [
               { key: "newest", label: "新しい順" },
               { key: "mistakes", label: "×多い順" },
-              { key: "alpha", label: "A→Z" },
             ] as const
           ).map(({ key, label }) => (
             <button

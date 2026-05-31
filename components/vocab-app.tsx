@@ -64,7 +64,7 @@ export function VocabApp({ items }: VocabAppProps) {
   return (
     <div className="flex min-h-dvh flex-col bg-gray-50">
       <main
-        className="mx-auto flex w-full max-w-md flex-1 flex-col overflow-hidden"
+        className="mx-auto flex h-dvh w-full max-w-md min-h-0 flex-1 flex-col overflow-hidden"
         style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom))" }}
       >
         {activeTab === "list" ? (

@@ -24,13 +24,13 @@ function RichText({ text }: { text: string }) {
 
 function TapHint() {
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex flex-col items-center">
       <Hand
-        className="h-16 w-16 text-gray-200"
+        className="h-14 w-14 text-gray-200"
         strokeWidth={1.25}
         aria-hidden
       />
-      <p className="mt-4 text-center text-sm text-gray-300">タップして表示</p>
+      <p className="mt-3 text-center text-sm text-gray-300">タップして表示</p>
     </div>
   );
 }
@@ -83,13 +83,9 @@ export function VocabFlashcard({
   if (!item) return null;
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex justify-center pt-4">
-        <div className="h-1 w-10 rounded-full bg-gray-300" />
-      </div>
-
+    <div className="flex h-full min-h-0 flex-col">
       <div
-        className="relative flex w-full flex-1 flex-col px-3 pt-6"
+        className="relative flex min-h-0 flex-1 items-center justify-center px-3 py-4"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -116,17 +112,21 @@ export function VocabFlashcard({
         <button
           type="button"
           onClick={() => setIsRevealed((value) => !value)}
-          className="flex w-full flex-1 flex-col items-center overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+          className={`relative flex w-full max-h-[min(70vh,560px)] min-h-[min(60vh,480px)] flex-col overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 ${
+            isRevealed ? "items-stretch" : "items-center justify-center"
+          }`}
         >
           {!isRevealed ? (
-            <div className="flex w-full flex-1 flex-col items-center justify-center gap-10 px-8 py-16">
-              <h1 className="w-full text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            <>
+              <h1 className="px-8 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                 {item.word}
               </h1>
-              <TapHint />
-            </div>
+              <div className="absolute inset-x-0 bottom-12 flex justify-center">
+                <TapHint />
+              </div>
+            </>
           ) : (
-            <div className="w-full animate-[fadeIn_0.25s_ease-out] px-8 py-10 text-left">
+            <div className="w-full animate-[fadeIn_0.25s_ease-out] overflow-y-auto px-8 py-10 text-left">
               <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
                 {item.word}
               </h1>
@@ -172,7 +172,7 @@ export function VocabFlashcard({
         </button>
       </div>
 
-      <footer className="px-6 pb-4 pt-2 text-center text-xs text-gray-400">
+      <footer className="shrink-0 px-6 pb-2 pt-1 text-center text-xs text-gray-400">
         {index + 1} / {total}
       </footer>
     </div>
