@@ -86,12 +86,15 @@ export function normalizeVocabularyRow(
   };
 }
 
-export async function fetchVocabulary(): Promise<VocabularyItem[]> {
+export async function fetchVocabulary(
+  lineUserId: string,
+): Promise<VocabularyItem[]> {
   const supabase = createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from(VOCAB_TABLE)
     .select("*")
+    .eq("line_user_id", lineUserId)
     .order("created_at", { ascending: false });
 
   if (error) {

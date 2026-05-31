@@ -15,26 +15,27 @@ import { useCallback, useEffect, useState } from "react";
 
 type VocabAppProps = {
   items: VocabularyItem[];
+  lineUserId: string;
 };
 
-export function VocabApp({ items }: VocabAppProps) {
+export function VocabApp({ items, lineUserId }: VocabAppProps) {
   const [activeTab, setActiveTab] = useState<AppTab>("card");
   const [cardIndex, setCardIndex] = useState(0);
   const [progress, setProgress] = useState<ProgressStore>({});
 
   useEffect(() => {
-    setProgress(loadProgress());
-  }, []);
+    setProgress(loadProgress(lineUserId));
+  }, [lineUserId]);
 
   const updateProgress = useCallback(
     (updater: ProgressStore | ((prev: ProgressStore) => ProgressStore)) => {
       setProgress((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
-        saveProgress(next);
+        saveProgress(next, lineUserId);
         return next;
       });
     },
-    [],
+    [lineUserId],
   );
 
   const handleSelectWord = useCallback((index: number) => {
@@ -55,7 +56,7 @@ export function VocabApp({ items }: VocabAppProps) {
         <p className="text-center text-sm leading-relaxed text-gray-500">
           表示できる単語がありません。
           <br />
-          LINE で単語を送るか、Supabase にデータを追加してください。
+          LINE で英単語を送ると、あなた専用の単語帳に追加されます。
         </p>
       </div>
     );

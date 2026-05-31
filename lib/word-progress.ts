@@ -5,17 +5,21 @@ export type WordProgress = {
 
 export type ProgressStore = Record<string, WordProgress>;
 
-const STORAGE_KEY = "english-vocab-progress";
+const STORAGE_KEY_PREFIX = "english-vocab-progress";
 const RESET_STREAK = 3;
+
+function storageKey(lineUserId: string): string {
+  return `${STORAGE_KEY_PREFIX}-${lineUserId}`;
+}
 
 function defaultProgress(): WordProgress {
   return { mistakeCount: 0, consecutiveCorrect: 0 };
 }
 
-export function loadProgress(): ProgressStore {
+export function loadProgress(lineUserId: string): ProgressStore {
   if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(lineUserId));
     if (!raw) return {};
     const parsed: unknown = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return {};
@@ -25,9 +29,9 @@ export function loadProgress(): ProgressStore {
   }
 }
 
-export function saveProgress(store: ProgressStore): void {
+export function saveProgress(store: ProgressStore, lineUserId: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+  localStorage.setItem(storageKey(lineUserId), JSON.stringify(store));
 }
 
 export function getWordProgress(

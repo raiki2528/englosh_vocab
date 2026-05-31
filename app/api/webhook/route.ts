@@ -21,6 +21,31 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
+function getAppBaseUrl(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.VERCEL_URL?.trim() ||
+    "https://englosh-vocab.vercel.app";
+  const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
+  return withProtocol.replace(/\/$/, "");
+}
+
+function buildWelcomeMessage(lineUserId: string): string {
+  const vocabUrl = `${getAppBaseUrl()}/?uid=${encodeURIComponent(lineUserId)}`;
+
+  return `友だち追加ありがとうございます！🎉
+LINEで英単語を送ると、AIが意味や例文を返信し、自動で単語帳にストックします。
+
+まずは以下の「あなた専用の単語帳」を開いて、ブラウザのメニューから「ホーム画面に追加」をしてください！👇
+
+📖 あなた専用の単語帳：
+${vocabUrl}`;
+}
+
+function isFollowEvent(event: webhook.Event): event is webhook.FollowEvent {
+  return event.type === "follow";
+}
+
 function isTextMessageEvent(
   event: webhook.Event,
 ): event is webhook.MessageEvent & { message: webhook.TextMessageContent } {
@@ -45,7 +70,7 @@ function getLineUserId(event: webhook.Event): string | undefined {
 
 async function fetchDifyAnswer(
   query: string,
-  userId: string,
+  lineUserId: string,
   apiKey: string,
 ): Promise<string> {
   const response = await fetch(DIFY_CHAT_MESSAGES_URL, {
@@ -55,11 +80,13 @@ async function fetchDifyAnswer(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      inputs: {},
+      inputs: {
+        line_user_id: lineUserId,
+      },
       query,
       response_mode: "blocking",
       conversation_id: "",
-      user: userId,
+      user: lineUserId,
     }),
   });
 
@@ -97,6 +124,66 @@ function buildLineTextMessages(answer: string): LineTextMessage[] {
   return parts.map((text) => ({ type: "text", text }));
 }
 
+async function handleFollowEvent(
+  event: webhook.FollowEvent,
+  lineClient: LineBotClient,
+): Promise<void> {
+  const replyToken = event.replyToken;
+  const lineUserId = getLineUserId(event);
+
+  if (!replyToken || !lineUserId) {
+    console.warn("Skipping follow event: missing replyToken or userId");
+    return;
+  }
+
+  await lineClient.replyMessage({
+    replyToken,
+    messages: [{ type: "text", text: buildWelcomeMessage(lineUserId) }],
+  });
+}
+
+async function handleTextMessageEvent(
+  event: webhook.MessageEvent & { message: webhook.TextMessageContent },
+  lineClient: LineBotClient,
+  difyApiKey: string,
+): Promise<void> {
+  const replyToken = event.replyToken;
+  const lineUserId = getLineUserId(event);
+  const userMessage = event.message.text;
+
+  if (!replyToken || !lineUserId) {
+    console.warn("Skipping text message: missing replyToken or userId", {
+      eventId: "webhookEventId" in event ? event.webhookEventId : undefined,
+    });
+    return;
+  }
+
+  try {
+    const answer = await fetchDifyAnswer(userMessage, lineUserId, difyApiKey);
+
+    await lineClient.replyMessage({
+      replyToken,
+      messages: buildLineTextMessages(answer),
+    });
+  } catch (error) {
+    console.error("Failed to process LINE text message:", error);
+
+    try {
+      await lineClient.replyMessage({
+        replyToken,
+        messages: [
+          {
+            type: "text",
+            text: "申し訳ありません。処理中にエラーが発生しました。しばらくしてからもう一度お試しください。",
+          },
+        ],
+      });
+    } catch (replyError) {
+      console.error("Failed to send error reply to LINE:", replyError);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const channelSecret = getRequiredEnv("LINE_CHANNEL_SECRET");
@@ -130,44 +217,22 @@ export async function POST(request: NextRequest) {
     });
 
     for (const event of payload.events) {
-      if (!isTextMessageEvent(event)) {
-        continue;
-      }
-
-      const replyToken = event.replyToken;
-      const userId = getLineUserId(event);
-      const userMessage = event.message.text;
-
-      if (!replyToken || !userId) {
-        console.warn("Skipping text message: missing replyToken or userId", {
-          eventId: "webhookEventId" in event ? event.webhookEventId : undefined,
-        });
-        continue;
-      }
-
-      try {
-        const answer = await fetchDifyAnswer(userMessage, userId, difyApiKey);
-
-        await lineClient.replyMessage({
-          replyToken,
-          messages: buildLineTextMessages(answer),
-        });
-      } catch (error) {
-        console.error("Failed to process LINE text message:", error);
-
+      if (isFollowEvent(event)) {
         try {
-          await lineClient.replyMessage({
-            replyToken,
-            messages: [
-              {
-                type: "text",
-                text: "申し訳ありません。処理中にエラーが発生しました。しばらくしてからもう一度お試しください。",
-              },
-            ],
-          });
-        } catch (replyError) {
-          console.error("Failed to send error reply to LINE:", replyError);
+          await handleFollowEvent(event, lineClient);
+        } catch (error) {
+          console.error("Failed to process LINE follow event:", error);
         }
+        continue;
+      }
+
+      if (isTextMessageEvent(event)) {
+        try {
+          await handleTextMessageEvent(event, lineClient, difyApiKey);
+        } catch (error) {
+          console.error("Failed to process LINE message event:", error);
+        }
+        continue;
       }
     }
 
