@@ -22,15 +22,6 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
-function formatError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/** ログ用（キー本体は出さない） */
-function difyKeyHint(apiKey: string): string {
-  return `len=${apiKey.length}, suffix=…${apiKey.slice(-4)}`;
-}
-
 function getAppBaseUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
@@ -83,12 +74,6 @@ async function fetchDifyAnswer(
   lineUserId: string,
   apiKey: string,
 ): Promise<string> {
-  console.info("[webhook] Calling Dify chat-messages", {
-    lineUserId,
-    queryPreview: query.slice(0, 40),
-    apiKey: difyKeyHint(apiKey),
-  });
-
   const response = await fetch(DIFY_CHAT_MESSAGES_URL, {
     method: "POST",
     headers: {
@@ -101,17 +86,12 @@ async function fetchDifyAnswer(
       },
       query,
       response_mode: "blocking",
-      conversation_id: "",
       user: lineUserId,
     }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
-    console.error("[webhook] Dify HTTP error", {
-      status: response.status,
-      bodyPreview: errorBody.slice(0, 200),
-    });
     throw new Error(
       `Dify API request failed (${response.status}): ${errorBody || response.statusText}`,
     );
@@ -120,13 +100,9 @@ async function fetchDifyAnswer(
   const data = (await response.json()) as DifyChatResponse;
 
   if (typeof data.answer !== "string" || data.answer.length === 0) {
-    console.error("[webhook] Dify response missing answer", {
-      keys: Object.keys(data),
-    });
     throw new Error("Dify API response did not include a valid answer");
   }
 
-  console.info("[webhook] Dify OK", { answerLength: data.answer.length });
   return data.answer;
 }
 
@@ -184,22 +160,13 @@ async function handleTextMessageEvent(
 
   try {
     const answer = await fetchDifyAnswer(userMessage, lineUserId, difyApiKey);
-    const messages = buildLineTextMessages(answer);
 
-    try {
-      await lineClient.replyMessage({
-        replyToken,
-        messages,
-      });
-      console.info("[webhook] LINE reply OK", { messageCount: messages.length });
-    } catch (replyError) {
-      console.error("[webhook] LINE reply failed after Dify OK:", formatError(replyError));
-      throw replyError;
-    }
+    await lineClient.replyMessage({
+      replyToken,
+      messages: buildLineTextMessages(answer),
+    });
   } catch (error) {
-    console.error("Failed to process text message:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : String(error);
+    console.error("Failed to process LINE text message:", error);
 
     try {
       await lineClient.replyMessage({
@@ -207,7 +174,7 @@ async function handleTextMessageEvent(
         messages: [
           {
             type: "text",
-            text: `【デバッグ調査中】\nエラーの原因はこれです👇\n\n${errorMessage}`,
+            text: "申し訳ありません。処理中にエラーが発生しました。しばらくしてからもう一度お試しください。",
           },
         ],
       });
@@ -247,11 +214,6 @@ export async function POST(request: NextRequest) {
 
     const lineClient = LineBotClient.fromChannelAccessToken({
       channelAccessToken,
-    });
-
-    console.info("[webhook] Events received", {
-      count: payload.events.length,
-      types: payload.events.map((e) => e.type),
     });
 
     for (const event of payload.events) {
