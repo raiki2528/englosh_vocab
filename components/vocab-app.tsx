@@ -57,6 +57,11 @@ export function VocabApp({ items, lineUserId }: VocabAppProps) {
           表示できる単語がありません。
           <br />
           LINE で英単語を送ると、あなた専用の単語帳に追加されます。
+          <br />
+          <span className="mt-2 block text-xs text-gray-400">
+            ホーム画面に追加した場合は、LINEのウェルカムメッセージ内のリンクから開き直してください（URLに
+            ?uid= が必要です）。
+          </span>
         </p>
       </div>
     );

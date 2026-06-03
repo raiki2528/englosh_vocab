@@ -26,7 +26,7 @@ export default async function Home({ searchParams }: HomeProps) {
     return <MissingUidMessage />;
   }
 
-  const lineUserId = uid.trim();
+  const lineUserId = uid.trim().replace(/^["']+|["']+$/g, "");
 
   try {
     const items = await fetchVocabulary(lineUserId);

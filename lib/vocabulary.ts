@@ -13,6 +13,10 @@ export type VocabularyItem = {
 const VOCAB_TABLE =
   process.env.SUPABASE_VOCAB_TABLE?.trim() || "english_vocab";
 
+export function normalizeLineUserId(lineUserId: string): string {
+  return lineUserId.trim().replace(/^["']+|["']+$/g, "");
+}
+
 function pickString(row: Record<string, unknown>, keys: string[]): string {
   for (const key of keys) {
     const value = row[key];
@@ -86,15 +90,33 @@ export function normalizeVocabularyRow(
   };
 }
 
+function throwIfRowsExistButNotForUser(
+  sample: { line_user_id: string | null }[],
+  normalizedUid: string,
+): void {
+  const allNull = sample.every((row) => !row.line_user_id?.trim());
+
+  if (allNull) {
+    throw new Error(
+      "単語は登録されていますが line_user_id が空のままです。Supabase で supabase/backfill-line-user-id.sql を実行するか、LINE で新しく単語を送り直してください。",
+    );
+  }
+
+  throw new Error(
+    `このURLのユーザーID（${normalizedUid.slice(0, 10)}…）に一致する単語がありません。LINEのウェルカムメッセージに載っている「あなた専用の単語帳」リンクから開き直してください。`,
+  );
+}
+
 export async function fetchVocabulary(
   lineUserId: string,
 ): Promise<VocabularyItem[]> {
+  const normalizedUid = normalizeLineUserId(lineUserId);
   const supabase = createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from(VOCAB_TABLE)
     .select("*")
-    .eq("line_user_id", lineUserId)
+    .eq("line_user_id", normalizedUid)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -106,7 +128,28 @@ export async function fetchVocabulary(
     throw new Error(`単語データの取得に失敗しました: ${error.message}`);
   }
 
-  return (data ?? []).map((row) =>
+  const items = (data ?? []).map((row) =>
     normalizeVocabularyRow(row as Record<string, unknown>),
   );
+
+  if (items.length === 0) {
+    const { data: sample, error: sampleError } = await supabase
+      .from(VOCAB_TABLE)
+      .select("id, line_user_id")
+      .order("created_at", { ascending: false })
+      .limit(10);
+
+    if (sampleError) {
+      throw new Error(`単語データの取得に失敗しました: ${sampleError.message}`);
+    }
+
+    if (sample && sample.length > 0) {
+      throwIfRowsExistButNotForUser(
+        sample as { line_user_id: string | null }[],
+        normalizedUid,
+      );
+    }
+  }
+
+  return items;
 }

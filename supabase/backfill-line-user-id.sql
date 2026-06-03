@@ -1,0 +1,11 @@
+-- 過去に保存した単語（line_user_id が NULL）を、自分の LINE ID に紐づける
+-- Supabase SQL Editor で実行してください
+--
+-- 手順:
+-- 1. LINE のウェルカムメッセージの URL から ?uid= の後ろ（U で始まる文字列）をコピー
+-- 2. 下の YOUR_LINE_USER_ID をその値に置き換える
+-- 3. 実行
+
+-- update public.english_vocab
+-- set line_user_id = 'YOUR_LINE_USER_ID'
+-- where line_user_id is null;
