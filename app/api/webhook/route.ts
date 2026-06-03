@@ -22,11 +22,12 @@ function getRequiredEnv(name: string): string {
   return value;
 }
 
+const IOS_ADD_TO_HOME_URL =
+  "https://support.apple.com/ja-jp/guide/iphone/iphea86e5236/ios";
+const DEFAULT_APP_URL = "https://englosh-vocab.vercel.app";
+
 function getAppBaseUrl(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    process.env.VERCEL_URL?.trim() ||
-    "https://englosh-vocab.vercel.app";
+  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim() || DEFAULT_APP_URL;
   const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
   return withProtocol.replace(/\/$/, "");
 }
@@ -37,10 +38,14 @@ function buildWelcomeMessage(lineUserId: string): string {
   return `友だち追加ありがとうございます！🎉
 LINEで英単語を送ると、AIが意味や例文を返信し、自動で単語帳にストックします。
 
-まずは以下の「あなた専用の単語帳」を開いて、ブラウザのメニューから「ホーム画面に追加」をしてください！👇
+下の「あなた専用の単語帳」を Safari で開いて、ホーム画面に追加してね。
+ホーム画面に追加の方法は下記リンクを参照してね👇
 
 📖 あなた専用の単語帳：
-${vocabUrl}`;
+${vocabUrl}
+
+📱 ホーム画面に追加する方法（iPhone）：
+${IOS_ADD_TO_HOME_URL}`;
 }
 
 function isFollowEvent(event: webhook.Event): event is webhook.FollowEvent {
