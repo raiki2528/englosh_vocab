@@ -1,26 +1,9 @@
 "use client";
 
+import { VocabDetail } from "@/components/vocab-content";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import { ChevronLeft, ChevronRight, Hand } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-function RichText({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-
-  return (
-    <>
-      {parts.map((part, index) =>
-        part.startsWith("**") && part.endsWith("**") ? (
-          <strong key={index} className="font-semibold text-gray-900">
-            {part.slice(2, -2)}
-          </strong>
-        ) : (
-          <span key={index}>{part}</span>
-        ),
-      )}
-    </>
-  );
-}
 
 function TapHint() {
   return (
@@ -131,42 +114,11 @@ export function VocabFlashcard({
                 {item.word}
               </h1>
 
-              {item.meaning ? (
-                <p className="mt-6 text-center text-lg leading-relaxed text-gray-900">
-                  {item.meaning}
-                </p>
-              ) : null}
-
-              <div className="mt-10 space-y-8 text-[15px] leading-7 text-gray-800">
-                {item.example1 ? (
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-gray-400">
-                      例文 1
-                    </p>
-                    <p>
-                      <RichText text={item.example1} />
-                    </p>
-                  </div>
-                ) : null}
-
-                {item.example2 ? (
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-gray-400">
-                      例文 2
-                    </p>
-                    <p>
-                      <RichText text={item.example2} />
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-
-              {item.memo ? (
-                <div className="mt-8 rounded-2xl bg-gray-100 px-5 py-4 text-sm leading-7 text-gray-700">
-                  <p className="mb-2 text-xs font-medium text-gray-400">memo</p>
-                  {item.memo}
-                </div>
-              ) : null}
+              <VocabDetail
+                item={item}
+                memoLabel="説明"
+                className="mt-6 animate-[fadeIn_0.25s_ease-out]"
+              />
             </div>
           )}
         </button>

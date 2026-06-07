@@ -6,7 +6,9 @@ export type VocabularyItem = {
   word: string;
   meaning: string;
   example1: string;
+  example1Ja: string;
   example2: string;
+  example2Ja: string;
   memo: string;
 };
 
@@ -75,6 +77,11 @@ export function normalizeVocabularyRow(
   const example1 = parseExampleField(row.example_1 ?? row.example1);
   const example2 = parseExampleField(row.example_2 ?? row.example2);
 
+  const memo =
+    pickString(row, ["memo", "notes", "comment"]) ||
+    example1.note ||
+    example2.note;
+
   return {
     id: pickString(row, ["id"]),
     createdAt: pickString(row, ["created_at", "createdAt"]),
@@ -83,10 +90,12 @@ export function normalizeVocabularyRow(
     example1:
       example1.en ||
       pickString(row, ["example_1", "example_1_en", "example1_en"]),
+    example1Ja: example1.ja,
     example2:
       example2.en ||
       pickString(row, ["example_2", "example_2_en", "example2_en"]),
-    memo: pickString(row, ["memo", "note", "notes", "comment"]),
+    example2Ja: example2.ja,
+    memo,
   };
 }
 

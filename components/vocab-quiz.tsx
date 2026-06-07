@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { VocabDetail } from "@/components/vocab-content";
 import type { DateRange, QuizMode } from "@/lib/quiz-filters";
 import {
   QUIZ_MODES,
@@ -121,24 +121,13 @@ export function VocabQuiz({
 
   if (phase === "setup") {
     return (
-      <div className="flex h-full min-h-0 flex-col px-4 py-6">
-        <div className="flex flex-1 items-center justify-center">
-          <Image
-            src="/icons/icon-512.png"
-            alt=""
-            width={200}
-            height={200}
-            priority
-            className="h-auto w-[min(52vw,200px)] rounded-[1.75rem] shadow-sm"
-          />
-        </div>
-
-        <section className="shrink-0 rounded-2xl bg-white p-4 ring-1 ring-gray-100">
-          <p className="mb-3 text-center text-xs font-medium text-gray-500">
+      <div className="flex h-full items-center justify-center px-6 py-8">
+        <div className="w-full max-w-xs">
+          <p className="text-center text-sm font-medium text-gray-700">
             テストする単語
           </p>
 
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
             {QUIZ_MODES.map((option) => {
               const isActive = mode === option.id;
               return (
@@ -149,7 +138,7 @@ export function VocabQuiz({
                   className={`rounded-full px-4 py-2 text-sm transition-colors ${
                     isActive
                       ? "bg-gray-900 text-white"
-                      : "bg-gray-50 text-gray-700 ring-1 ring-gray-200"
+                      : "bg-white text-gray-700 ring-1 ring-gray-200"
                   }`}
                 >
                   {option.label}
@@ -158,7 +147,7 @@ export function VocabQuiz({
             })}
           </div>
 
-          <div className="mt-4 flex items-end gap-3">
+          <div className="mt-6 flex items-end gap-3">
             <label className="flex flex-1 flex-col gap-1.5">
               <span className="text-xs text-gray-400">開始</span>
               <input
@@ -167,7 +156,7 @@ export function VocabQuiz({
                 onChange={(e) =>
                   setDateRange((prev) => ({ ...prev, start: e.target.value }))
                 }
-                className="w-full rounded-xl border-0 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-xl border-0 bg-white px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </label>
             <span className="pb-2.5 text-sm text-gray-300">〜</span>
@@ -179,12 +168,12 @@ export function VocabQuiz({
                 onChange={(e) =>
                   setDateRange((prev) => ({ ...prev, end: e.target.value }))
                 }
-                className="w-full rounded-xl border-0 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-xl border-0 bg-white px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </label>
           </div>
 
-          <div className="mt-2 flex justify-end gap-3">
+          <div className="mt-2 flex justify-center gap-4">
             <button
               type="button"
               onClick={applyWeekRange}
@@ -210,22 +199,20 @@ export function VocabQuiz({
             ) : null}
           </div>
 
-          <p className="mt-3 text-center text-xs text-gray-400">
+          <p className="mt-4 text-center text-xs text-gray-400">
             {dateRange.start && dateRange.end
               ? `${filteredCount} 語`
               : "期間を指定しない場合は全期間"}
           </p>
-        </section>
 
-        <div className="mt-4 shrink-0">
-          <p className="mb-3 text-center text-sm text-gray-500">
+          <p className="mt-8 text-center text-sm text-gray-500">
             {filteredCount} 語
           </p>
           <button
             type="button"
             disabled={filteredCount === 0}
             onClick={startQuiz}
-            className="w-full rounded-2xl bg-gray-900 py-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
+            className="mt-3 w-full rounded-2xl bg-gray-900 py-4 text-sm font-medium text-white transition-opacity disabled:opacity-30"
           >
             開始
           </button>
@@ -259,15 +246,22 @@ export function VocabQuiz({
         {currentIndex + 1} / {sessionItems.length}
       </p>
 
-      <div className="flex min-h-0 items-center justify-center px-2">
+      <div
+        className={`flex min-h-0 px-2 ${
+          showAnswer
+            ? "items-start justify-center overflow-y-auto"
+            : "items-center justify-center"
+        }`}
+      >
         <div className="w-full max-w-sm text-center">
           <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
             {currentItem?.word}
           </h2>
-          {showAnswer && currentItem?.meaning ? (
-            <p className="mt-6 animate-[fadeIn_0.2s_ease-out] text-lg text-gray-600">
-              {currentItem.meaning}
-            </p>
+          {showAnswer && currentItem ? (
+            <VocabDetail
+              item={currentItem}
+              className="mt-6 w-full animate-[fadeIn_0.2s_ease-out] text-left"
+            />
           ) : null}
         </div>
       </div>
