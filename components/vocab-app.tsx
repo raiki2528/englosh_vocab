@@ -4,6 +4,7 @@ import { BottomNav, type AppTab } from "@/components/bottom-nav";
 import { VocabFlashcard } from "@/components/vocab-flashcard";
 import { VocabList } from "@/components/vocab-list";
 import { VocabQuiz } from "@/components/vocab-quiz";
+import { deleteVocabularyItem } from "@/lib/delete-vocabulary";
 import { saveLineUserId } from "@/lib/line-user-id";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import {
@@ -19,10 +20,17 @@ type VocabAppProps = {
   lineUserId: string;
 };
 
-export function VocabApp({ items, lineUserId }: VocabAppProps) {
+export function VocabApp({ items: initialItems, lineUserId }: VocabAppProps) {
+  const [items, setItems] = useState(initialItems);
   const [activeTab, setActiveTab] = useState<AppTab>("card");
   const [cardIndex, setCardIndex] = useState(0);
   const [progress, setProgress] = useState<ProgressStore>({});
+  const [deletingWordId, setDeletingWordId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   useEffect(() => {
     saveLineUserId(lineUserId);
@@ -52,6 +60,45 @@ export function VocabApp({ items, lineUserId }: VocabAppProps) {
     [updateProgress],
   );
 
+  const handleDeleteWord = useCallback(
+    async (wordId: string) => {
+      setDeleteError(null);
+      setDeletingWordId(wordId);
+
+      try {
+        await deleteVocabularyItem(wordId, lineUserId);
+
+        setItems((prev) => {
+          const deletedIndex = prev.findIndex((item) => item.id === wordId);
+          const next = prev.filter((item) => item.id !== wordId);
+
+          setCardIndex((currentIndex) => {
+            if (next.length === 0) return 0;
+            if (deletedIndex < 0) return Math.min(currentIndex, next.length - 1);
+            if (deletedIndex < currentIndex) return currentIndex - 1;
+            if (currentIndex >= next.length) return next.length - 1;
+            return currentIndex;
+          });
+
+          return next;
+        });
+
+        updateProgress((prev) => {
+          const next = { ...prev };
+          delete next[wordId];
+          return next;
+        });
+      } catch (error) {
+        setDeleteError(
+          error instanceof Error ? error.message : "単語の削除に失敗しました",
+        );
+      } finally {
+        setDeletingWordId(null);
+      }
+    },
+    [lineUserId, updateProgress],
+  );
+
   if (items.length === 0) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-6">
@@ -76,12 +123,21 @@ export function VocabApp({ items, lineUserId }: VocabAppProps) {
         style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom))" }}
       >
         {activeTab === "list" ? (
-          <VocabList
-            items={items}
-            progress={progress}
-            onSelectWord={handleSelectWord}
-            onResetProgress={handleResetProgress}
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            {deleteError ? (
+              <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-2 text-center text-xs text-red-600">
+                {deleteError}
+              </div>
+            ) : null}
+            <VocabList
+              items={items}
+              progress={progress}
+              onSelectWord={handleSelectWord}
+              onResetProgress={handleResetProgress}
+              onDeleteWord={handleDeleteWord}
+              deletingWordId={deletingWordId}
+            />
+          </div>
         ) : null}
 
         {activeTab === "card" ? (

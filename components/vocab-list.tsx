@@ -1,5 +1,6 @@
 "use client";
 
+import { SwipeableListRow } from "@/components/swipeable-list-row";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import { isThisWeek } from "@/lib/quiz-filters";
 import type { ProgressStore } from "@/lib/word-progress";
@@ -14,6 +15,8 @@ type VocabListProps = {
   progress: ProgressStore;
   onSelectWord: (index: number) => void;
   onResetProgress: (wordId: string) => void;
+  onDeleteWord: (wordId: string) => void;
+  deletingWordId?: string | null;
 };
 
 function mistakeBadgeClass(count: number): string {
@@ -37,8 +40,11 @@ export function VocabList({
   progress,
   onSelectWord,
   onResetProgress,
+  onDeleteWord,
+  deletingWordId = null,
 }: VocabListProps) {
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
 
   const sortedItems = useMemo(() => {
     const copy = items.map((item, index) => ({ item, index }));
@@ -79,6 +85,9 @@ export function VocabList({
       <header className="border-b border-gray-200 bg-gray-50 px-4 py-4">
         <h1 className="text-lg font-semibold text-gray-900">単語一覧</h1>
         <p className="mt-1 text-xs text-gray-500">{items.length} 語</p>
+        <p className="mt-1 text-xs text-gray-400">
+          単語を左右にスワイプすると削除できます
+        </p>
         <div className="mt-3 flex gap-2">
           {(
             [
@@ -106,12 +115,25 @@ export function VocabList({
         {sortedItems.map(({ item, index }) => {
           const mistakes = getMistakeCount(progress, item.id);
           const showWeekBadge = isThisWeek(item.createdAt);
+          const isDeleting = deletingWordId === item.id;
 
           return (
-            <li key={item.id} className="flex items-stretch bg-white">
+            <SwipeableListRow
+              key={item.id}
+              isOpen={openRowId === item.id}
+              onOpenChange={(open) => setOpenRowId(open ? item.id : null)}
+              onDelete={() => onDeleteWord(item.id)}
+              isDeleting={isDeleting}
+            >
               <button
                 type="button"
-                onClick={() => onSelectWord(index)}
+                onClick={() => {
+                  if (openRowId === item.id) {
+                    setOpenRowId(null);
+                    return;
+                  }
+                  onSelectWord(index);
+                }}
                 className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-4 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -148,7 +170,7 @@ export function VocabList({
                   <RotateCcw className="h-4 w-4" />
                 </button>
               ) : null}
-            </li>
+            </SwipeableListRow>
           );
         })}
       </ul>
