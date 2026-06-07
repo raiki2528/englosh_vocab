@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { DateRange, QuizMode } from "@/lib/quiz-filters";
 import {
   QUIZ_MODES,
@@ -120,29 +121,44 @@ export function VocabQuiz({
 
   if (phase === "setup") {
     return (
-      <div className="flex h-full flex-col overflow-y-auto px-4 py-8">
-        <div className="flex flex-wrap justify-center gap-2">
-          {QUIZ_MODES.map((option) => {
-            const isActive = mode === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setMode(option.id)}
-                className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                  isActive
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-700 ring-1 ring-gray-200"
-                }`}
-              >
-                {option.label}
-              </button>
-            );
-          })}
+      <div className="flex h-full min-h-0 flex-col px-4 py-6">
+        <div className="flex flex-1 items-center justify-center">
+          <Image
+            src="/icons/icon-512.png"
+            alt=""
+            width={200}
+            height={200}
+            priority
+            className="h-auto w-[min(52vw,200px)] rounded-[1.75rem] shadow-sm"
+          />
         </div>
 
-        <section className="mt-8">
-          <div className="flex items-end gap-3">
+        <section className="shrink-0 rounded-2xl bg-white p-4 ring-1 ring-gray-100">
+          <p className="mb-3 text-center text-xs font-medium text-gray-500">
+            テストする単語
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-2">
+            {QUIZ_MODES.map((option) => {
+              const isActive = mode === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setMode(option.id)}
+                  className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-50 text-gray-700 ring-1 ring-gray-200"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex items-end gap-3">
             <label className="flex flex-1 flex-col gap-1.5">
               <span className="text-xs text-gray-400">開始</span>
               <input
@@ -151,7 +167,7 @@ export function VocabQuiz({
                 onChange={(e) =>
                   setDateRange((prev) => ({ ...prev, start: e.target.value }))
                 }
-                className="w-full rounded-xl border-0 bg-white px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-xl border-0 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </label>
             <span className="pb-2.5 text-sm text-gray-300">〜</span>
@@ -163,7 +179,7 @@ export function VocabQuiz({
                 onChange={(e) =>
                   setDateRange((prev) => ({ ...prev, end: e.target.value }))
                 }
-                className="w-full rounded-xl border-0 bg-white px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                className="w-full rounded-xl border-0 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 ring-1 ring-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300"
               />
             </label>
           </div>
@@ -194,19 +210,15 @@ export function VocabQuiz({
             ) : null}
           </div>
 
-          {dateRange.start && dateRange.end ? (
-            <p className="mt-2 text-center text-xs text-gray-400">
-              {filteredCount} 語
-            </p>
-          ) : (
-            <p className="mt-2 text-center text-xs text-gray-300">
-              期間を指定しない場合は全期間
-            </p>
-          )}
+          <p className="mt-3 text-center text-xs text-gray-400">
+            {dateRange.start && dateRange.end
+              ? `${filteredCount} 語`
+              : "期間を指定しない場合は全期間"}
+          </p>
         </section>
 
-        <div className="mt-auto pt-10">
-          <p className="mb-3 text-center text-xs text-gray-400">
+        <div className="mt-4 shrink-0">
+          <p className="mb-3 text-center text-sm text-gray-500">
             {filteredCount} 語
           </p>
           <button
