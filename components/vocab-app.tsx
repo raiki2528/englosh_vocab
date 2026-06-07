@@ -4,6 +4,7 @@ import { BottomNav, type AppTab } from "@/components/bottom-nav";
 import { VocabFlashcard } from "@/components/vocab-flashcard";
 import { VocabList } from "@/components/vocab-list";
 import { VocabQuiz } from "@/components/vocab-quiz";
+import { saveLineUserId } from "@/lib/line-user-id";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import {
   loadProgress,
@@ -24,6 +25,7 @@ export function VocabApp({ items, lineUserId }: VocabAppProps) {
   const [progress, setProgress] = useState<ProgressStore>({});
 
   useEffect(() => {
+    saveLineUserId(lineUserId);
     setProgress(loadProgress(lineUserId));
   }, [lineUserId]);
 
