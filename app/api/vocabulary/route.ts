@@ -1,6 +1,6 @@
 import { LINE_USER_ID_COOKIE } from "@/lib/line-user-id";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeLineUserId } from "@/lib/vocabulary";
+import { fetchVocabulary, normalizeLineUserId } from "@/lib/vocabulary";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -24,6 +24,30 @@ async function resolveLineUserId(
   }
 
   return null;
+}
+
+export async function GET(request: NextRequest) {
+  const lineUserId = await resolveLineUserId(request);
+
+  if (!lineUserId) {
+    return NextResponse.json({ error: "Missing uid" }, { status: 401 });
+  }
+
+  try {
+    const items = await fetchVocabulary(lineUserId);
+    return NextResponse.json(
+      { items },
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      },
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "単語データの取得に失敗しました";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: NextRequest) {

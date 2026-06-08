@@ -42,17 +42,33 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+function getSupabaseOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const match = raw.match(/https?:\/\/[^\s\])]+/);
+  return match ? match[0].replace(/\/$/, "") : null;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseOrigin = getSupabaseOrigin();
+
   return (
     <html
       lang="ja"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full bg-gray-50 antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        {supabaseOrigin ? (
+          <>
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+            <link rel="preconnect" href={supabaseOrigin} crossOrigin="" />
+          </>
+        ) : null}
+      </head>
+      <body className="min-h-full flex flex-col bg-gray-50">{children}</body>
     </html>
   );
 }
