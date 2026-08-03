@@ -18,11 +18,18 @@ import { useCallback, useEffect, useState } from "react";
 type VocabAppProps = {
   items: VocabularyItem[];
   lineUserId: string;
+  initialTab?: AppTab;
+  initialQuizRange?: "week";
 };
 
-export function VocabApp({ items: initialItems, lineUserId }: VocabAppProps) {
+export function VocabApp({
+  items: initialItems,
+  lineUserId,
+  initialTab,
+  initialQuizRange,
+}: VocabAppProps) {
   const [items, setItems] = useState(initialItems);
-  const [activeTab, setActiveTab] = useState<AppTab>("card");
+  const [activeTab, setActiveTab] = useState<AppTab>(initialTab ?? "card");
   const [cardIndex, setCardIndex] = useState(0);
   const [progress, setProgress] = useState<ProgressStore>({});
   const [deletingWordId, setDeletingWordId] = useState<string | null>(null);
@@ -153,6 +160,7 @@ export function VocabApp({ items: initialItems, lineUserId }: VocabAppProps) {
             items={items}
             progress={progress}
             onProgressChange={updateProgress}
+            initialDateRangePreset={initialQuizRange}
           />
         ) : null}
       </main>

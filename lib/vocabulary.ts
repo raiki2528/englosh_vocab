@@ -5,6 +5,7 @@ export type VocabularyItem = {
   createdAt: string;
   word: string;
   meaning: string;
+  synonyms: string;
   example1: string;
   example1Ja: string;
   example2: string;
@@ -87,6 +88,7 @@ export function normalizeVocabularyRow(
     createdAt: pickString(row, ["created_at", "createdAt"]),
     word: pickString(row, ["word", "expression", "phrase"]),
     meaning: pickString(row, ["meaning", "meaning_ja", "translation"]),
+    synonyms: pickString(row, ["synonyms", "similar_words", "related_words"]),
     example1:
       example1.en ||
       pickString(row, ["example_1", "example_1_en", "example1_en"]),

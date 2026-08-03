@@ -149,6 +149,11 @@ export function VocabList({
                     {item.meaning}
                   </span>
                 ) : null}
+                {item.synonyms ? (
+                  <span className="truncate text-xs text-gray-400">
+                    類語: {item.synonyms}
+                  </span>
+                ) : null}
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   {formatDate(item.createdAt) ? (
                     <span>{formatDate(item.createdAt)}</span>

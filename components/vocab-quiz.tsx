@@ -23,18 +23,29 @@ type VocabQuizProps = {
   onProgressChange: (
     updater: ProgressStore | ((prev: ProgressStore) => ProgressStore),
   ) => void;
+  initialDateRangePreset?: "week";
 };
 
 type QuizPhase = "setup" | "playing" | "result";
+
+function createInitialDateRange(preset?: "week"): DateRange {
+  if (preset === "week") {
+    return getThisWeekRange();
+  }
+  return { start: "", end: "" };
+}
 
 export function VocabQuiz({
   items,
   progress,
   onProgressChange,
+  initialDateRangePreset,
 }: VocabQuizProps) {
   const [phase, setPhase] = useState<QuizPhase>("setup");
   const [mode, setMode] = useState<QuizMode>("all");
-  const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
+  const [dateRange, setDateRange] = useState<DateRange>(() =>
+    createInitialDateRange(initialDateRangePreset),
+  );
   const [sessionItems, setSessionItems] = useState<VocabularyItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);

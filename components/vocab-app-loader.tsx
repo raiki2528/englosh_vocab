@@ -1,5 +1,6 @@
 "use client";
 
+import type { AppTab } from "@/components/bottom-nav";
 import { VocabApp } from "@/components/vocab-app";
 import { VocabAppSkeleton } from "@/components/vocab-app-skeleton";
 import type { VocabularyItem } from "@/lib/vocabulary";
@@ -9,9 +10,15 @@ type LoadState = "loading" | "ready" | "error";
 
 type VocabAppLoaderProps = {
   lineUserId: string;
+  initialTab?: AppTab;
+  initialQuizRange?: "week";
 };
 
-export function VocabAppLoader({ lineUserId }: VocabAppLoaderProps) {
+export function VocabAppLoader({
+  lineUserId,
+  initialTab,
+  initialQuizRange,
+}: VocabAppLoaderProps) {
   const [state, setState] = useState<LoadState>("loading");
   const [items, setItems] = useState<VocabularyItem[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
@@ -77,5 +84,12 @@ export function VocabAppLoader({ lineUserId }: VocabAppLoaderProps) {
     );
   }
 
-  return <VocabApp items={items} lineUserId={lineUserId} />;
+  return (
+    <VocabApp
+      items={items}
+      lineUserId={lineUserId}
+      initialTab={initialTab}
+      initialQuizRange={initialQuizRange}
+    />
+  );
 }

@@ -21,6 +21,7 @@ Supabase で `line_user_id` が NULL のままになるのは、**Dify の HTTP 
 {
   "word": "...",
   "meaning": "...",
+  "synonyms": "...",
   "example_1": "...",
   "example_2": "...",
   "line_user_id": "{{#開始.line_user_id#}}"

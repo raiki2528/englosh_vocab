@@ -1,3 +1,9 @@
+import { buildVocabAppUrl } from "@/lib/app-url";
+import {
+  buildOptInConfirmationMessage,
+  parseOptInReply,
+} from "@/lib/opt-in-reply";
+import { setReminderPreference } from "@/lib/reminder-preferences";
 import { LineBotClient, validateSignature, webhook } from "@line/bot-sdk";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -24,16 +30,9 @@ function getRequiredEnv(name: string): string {
 
 const IOS_ADD_TO_HOME_URL =
   "https://support.apple.com/ja-jp/guide/iphone/iphea86e5236/ios";
-const DEFAULT_APP_URL = "https://englosh-vocab.vercel.app";
-
-function getAppBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim() || DEFAULT_APP_URL;
-  const withProtocol = raw.startsWith("http") ? raw : `https://${raw}`;
-  return withProtocol.replace(/\/$/, "");
-}
 
 function buildWelcomeMessage(lineUserId: string): string {
-  const vocabUrl = `${getAppBaseUrl()}/?uid=${encodeURIComponent(lineUserId)}`;
+  const vocabUrl = buildVocabAppUrl(lineUserId);
 
   return `友だち追加ありがとうございます！🎉
 LINEで英単語を送ると、AIが意味や例文を返信し、自動で単語帳にストックします。
@@ -147,6 +146,31 @@ async function handleFollowEvent(
   });
 }
 
+async function handleReminderOptInReply(
+  event: webhook.MessageEvent & { message: webhook.TextMessageContent },
+  lineClient: LineBotClient,
+  reply: "yes" | "no",
+): Promise<void> {
+  const replyToken = event.replyToken;
+  const lineUserId = getLineUserId(event);
+
+  if (!replyToken || !lineUserId) {
+    return;
+  }
+
+  await setReminderPreference(lineUserId, reply === "yes");
+
+  await lineClient.replyMessage({
+    replyToken,
+    messages: [
+      {
+        type: "text",
+        text: buildOptInConfirmationMessage(reply),
+      },
+    ],
+  });
+}
+
 async function handleTextMessageEvent(
   event: webhook.MessageEvent & { message: webhook.TextMessageContent },
   lineClient: LineBotClient,
@@ -160,6 +184,30 @@ async function handleTextMessageEvent(
     console.warn("Skipping text message: missing replyToken or userId", {
       eventId: "webhookEventId" in event ? event.webhookEventId : undefined,
     });
+    return;
+  }
+
+  const optInReply = parseOptInReply(userMessage);
+  if (optInReply) {
+    try {
+      await handleReminderOptInReply(event, lineClient, optInReply);
+    } catch (error) {
+      console.error("Failed to process reminder opt-in reply:", error);
+
+      try {
+        await lineClient.replyMessage({
+          replyToken,
+          messages: [
+            {
+              type: "text",
+              text: "申し訳ありません。設定の保存中にエラーが発生しました。しばらくしてからもう一度お試しください。",
+            },
+          ],
+        });
+      } catch (replyError) {
+        console.error("Failed to send opt-in error reply to LINE:", replyError);
+      }
+    }
     return;
   }
 

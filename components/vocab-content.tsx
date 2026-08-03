@@ -18,6 +18,34 @@ export function RichText({ text }: { text: string }) {
   );
 }
 
+function parseSynonyms(synonyms: string): string[] {
+  return synonyms
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+function SynonymsBlock({ synonyms }: { synonyms: string }) {
+  const items = parseSynonyms(synonyms);
+  if (items.length === 0) return null;
+
+  return (
+    <div className="mt-4 text-center">
+      <p className="text-xs font-medium text-gray-400">類語</p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        {items.map((synonym) => (
+          <span
+            key={synonym}
+            className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+          >
+            {synonym}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ExampleBlock({
   label,
   en,
@@ -64,6 +92,8 @@ export function VocabDetail({
           {item.meaning}
         </p>
       ) : null}
+
+      {item.synonyms ? <SynonymsBlock synonyms={item.synonyms} /> : null}
 
       <div className="mt-8 space-y-6">
         <ExampleBlock
