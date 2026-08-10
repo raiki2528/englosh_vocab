@@ -1,8 +1,8 @@
 "use client";
 
-import { ClipboardCheck, Layers, List } from "lucide-react";
+import { ClipboardCheck, Layers, List, Users } from "lucide-react";
 
-export type AppTab = "list" | "card" | "quiz";
+export type AppTab = "list" | "card" | "quiz" | "friends";
 
 type BottomNavProps = {
   activeTab: AppTab;
@@ -13,6 +13,7 @@ const TABS: { id: AppTab; label: string; icon: typeof List }[] = [
   { id: "list", label: "一覧", icon: List },
   { id: "card", label: "カード", icon: Layers },
   { id: "quiz", label: "テスト", icon: ClipboardCheck },
+  { id: "friends", label: "友達", icon: Users },
 ];
 
 export function BottomNav({ activeTab, onChange }: BottomNavProps) {

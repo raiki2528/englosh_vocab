@@ -8,11 +8,11 @@ export function getAppBaseUrl(): string {
 
 export function buildVocabAppUrl(
   lineUserId: string,
-  options?: { tab?: "quiz"; range?: "week" },
+  options?: { tab?: "quiz" | "friends"; range?: "week" },
 ): string {
   const params = new URLSearchParams({ uid: lineUserId });
-  if (options?.tab === "quiz") {
-    params.set("tab", "quiz");
+  if (options?.tab) {
+    params.set("tab", options.tab);
   }
   if (options?.range === "week") {
     params.set("range", "week");

@@ -15,7 +15,12 @@ function normalizeUid(value: string | undefined): string {
 }
 
 function parseInitialTab(value: string | undefined): AppTab | undefined {
-  if (value === "list" || value === "card" || value === "quiz") {
+  if (
+    value === "list" ||
+    value === "card" ||
+    value === "quiz" ||
+    value === "friends"
+  ) {
     return value;
   }
   return undefined;

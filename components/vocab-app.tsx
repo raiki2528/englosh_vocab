@@ -1,6 +1,7 @@
 "use client";
 
 import { BottomNav, type AppTab } from "@/components/bottom-nav";
+import { FriendsTab } from "@/components/friends-tab";
 import { VocabFlashcard } from "@/components/vocab-flashcard";
 import { VocabList } from "@/components/vocab-list";
 import { VocabQuiz } from "@/components/vocab-quiz";
@@ -36,12 +37,17 @@ export function VocabApp({
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
-    setItems(initialItems);
+    const timeout = window.setTimeout(() => setItems(initialItems), 0);
+    return () => window.clearTimeout(timeout);
   }, [initialItems]);
 
   useEffect(() => {
     saveLineUserId(lineUserId);
-    setProgress(loadProgress(lineUserId));
+    const timeout = window.setTimeout(
+      () => setProgress(loadProgress(lineUserId)),
+      0,
+    );
+    return () => window.clearTimeout(timeout);
   }, [lineUserId]);
 
   const updateProgress = useCallback(
@@ -106,30 +112,23 @@ export function VocabApp({
     [lineUserId, updateProgress],
   );
 
-  if (items.length === 0) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-gray-50 px-6">
-        <p className="text-center text-sm leading-relaxed text-gray-500">
-          表示できる単語がありません。
-          <br />
-          LINE で英単語を送ると、あなた専用の単語帳に追加されます。
-          <br />
-          <span className="mt-2 block text-xs text-gray-400">
-            ホーム画面に追加した場合は、LINEのウェルカムメッセージ内のリンクから開き直してください（URLに
-            ?uid= が必要です）。
-          </span>
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-dvh flex-col bg-gray-50">
       <main
         className="mx-auto flex h-dvh w-full max-w-md min-h-0 flex-1 flex-col overflow-hidden"
         style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom))" }}
       >
-        {activeTab === "list" ? (
+        {items.length === 0 && activeTab !== "friends" ? (
+          <div className="flex flex-1 items-center justify-center px-6">
+            <p className="text-center text-sm leading-relaxed text-gray-500">
+              表示できる単語がありません。
+              <br />
+              LINE で英単語を送ると、あなた専用の単語帳に追加されます。
+            </p>
+          </div>
+        ) : null}
+
+        {activeTab === "list" && items.length > 0 ? (
           <div className="flex min-h-0 flex-1 flex-col">
             {deleteError ? (
               <div className="shrink-0 border-b border-red-100 bg-red-50 px-4 py-2 text-center text-xs text-red-600">
@@ -147,7 +146,7 @@ export function VocabApp({
           </div>
         ) : null}
 
-        {activeTab === "card" ? (
+        {activeTab === "card" && items.length > 0 ? (
           <VocabFlashcard
             items={items}
             index={cardIndex}
@@ -155,13 +154,17 @@ export function VocabApp({
           />
         ) : null}
 
-        {activeTab === "quiz" ? (
+        {activeTab === "quiz" && items.length > 0 ? (
           <VocabQuiz
             items={items}
             progress={progress}
             onProgressChange={updateProgress}
             initialDateRangePreset={initialQuizRange}
           />
+        ) : null}
+
+        {activeTab === "friends" ? (
+          <FriendsTab lineUserId={lineUserId} />
         ) : null}
       </main>
 

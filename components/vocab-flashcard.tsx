@@ -1,9 +1,10 @@
 "use client";
 
+import { PronunciationButton } from "@/components/pronunciation-button";
 import { VocabDetail } from "@/components/vocab-content";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import { ChevronLeft, ChevronRight, Hand } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 function TapHint() {
   return (
@@ -14,6 +15,17 @@ function TapHint() {
         aria-hidden
       />
       <p className="mt-3 text-center text-sm text-gray-300">タップして表示</p>
+    </div>
+  );
+}
+
+function WordHeading({ word }: { word: string }) {
+  return (
+    <div className="flex items-center justify-center gap-2 px-8">
+      <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+        {word}
+      </h1>
+      <PronunciationButton word={word} />
     </div>
   );
 }
@@ -36,16 +48,14 @@ export function VocabFlashcard({
   const total = items.length;
 
   const goPrev = useCallback(() => {
+    setIsRevealed(false);
     onIndexChange(index > 0 ? index - 1 : index);
   }, [index, onIndexChange]);
 
   const goNext = useCallback(() => {
+    setIsRevealed(false);
     onIndexChange(index < total - 1 ? index + 1 : index);
   }, [index, onIndexChange, total]);
-
-  useEffect(() => {
-    setIsRevealed(false);
-  }, [index]);
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = event.touches[0]?.clientX ?? null;
@@ -61,6 +71,10 @@ export function VocabFlashcard({
     if (Math.abs(delta) < 56) return;
     if (delta < 0) goNext();
     else goPrev();
+  };
+
+  const toggleReveal = () => {
+    setIsRevealed((value) => !value);
   };
 
   if (!item) return null;
@@ -92,27 +106,31 @@ export function VocabFlashcard({
           <ChevronRight className="h-6 w-6" />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setIsRevealed((value) => !value)}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={isRevealed ? "カードの答えを隠す" : "カードの答えを表示"}
+          onClick={toggleReveal}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleReveal();
+            }
+          }}
           className={`relative flex w-full max-h-[min(70vh,560px)] min-h-[min(60vh,480px)] flex-col overflow-hidden rounded-3xl bg-white text-center shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 ${
             isRevealed ? "items-stretch" : "items-center justify-center"
           }`}
         >
           {!isRevealed ? (
             <>
-              <h1 className="px-8 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                {item.word}
-              </h1>
+              <WordHeading word={item.word} />
               <div className="absolute inset-x-0 bottom-12 flex justify-center">
                 <TapHint />
               </div>
             </>
           ) : (
             <div className="w-full animate-[fadeIn_0.25s_ease-out] overflow-y-auto px-8 py-10 text-left">
-              <h1 className="text-center text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-                {item.word}
-              </h1>
+              <WordHeading word={item.word} />
 
               <VocabDetail
                 item={item}
@@ -121,7 +139,7 @@ export function VocabFlashcard({
               />
             </div>
           )}
-        </button>
+        </div>
       </div>
 
       <footer className="shrink-0 px-6 pb-2 pt-1 text-center text-xs text-gray-400">

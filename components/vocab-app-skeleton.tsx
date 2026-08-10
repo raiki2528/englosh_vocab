@@ -10,7 +10,7 @@ function SkeletonBottomNav() {
       aria-hidden
     >
       <div className="mx-auto flex h-16 max-w-md items-stretch px-2">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             className="flex flex-1 flex-col items-center justify-center gap-1.5"

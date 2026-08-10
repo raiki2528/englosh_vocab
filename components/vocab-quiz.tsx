@@ -50,7 +50,6 @@ export function VocabQuiz({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
-  const [wrongCount, setWrongCount] = useState(0);
 
   const filterOptions = useMemo(
     () => ({
@@ -78,7 +77,6 @@ export function VocabQuiz({
     setCurrentIndex(0);
     setShowAnswer(false);
     setCorrectCount(0);
-    setWrongCount(0);
     setPhase("playing");
   }
 
@@ -92,7 +90,6 @@ export function VocabQuiz({
   function handleWrong() {
     if (!currentItem) return;
     onProgressChange((store) => recordQuizWrong(store, currentItem.id));
-    setWrongCount((c) => c + 1);
     setShowAnswer(true);
   }
 

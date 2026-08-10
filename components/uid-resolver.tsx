@@ -29,7 +29,8 @@ export function UidResolver() {
       router.replace(`/?uid=${encodeURIComponent(stored)}`);
       return;
     }
-    setStatus("missing");
+    const timeout = window.setTimeout(() => setStatus("missing"), 0);
+    return () => window.clearTimeout(timeout);
   }, [router]);
 
   if (status === "checking") {
