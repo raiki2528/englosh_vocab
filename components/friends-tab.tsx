@@ -402,16 +402,6 @@ function MemberProfilePanel({
                 週の目標 {detail.profile.weeklyWordTarget}語
               </p>
             </section>
-            <StockedWordsSection
-              title={`今週ストックした単語（${formatWeek(detail.week.start, detail.week.end)}）`}
-              words={detail.weeklyWords}
-              emptyLabel="今週はまだ単語がありません"
-            />
-            <StockedWordsSection
-              title={`これまでにストックした単語（${detail.allWords.length}語）`}
-              words={detail.allWords}
-              emptyLabel="まだ単語がありません"
-            />
             <ProfileSection title="英語を勉強する目的">
               <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">
                 {detail.profile.purpose}
@@ -446,6 +436,16 @@ function MemberProfilePanel({
                 <EmptyProfileValue />
               )}
             </ProfileSection>
+            <StockedWordsSection
+              title={`今週ストックした単語（${formatWeek(detail.week.start, detail.week.end)}）`}
+              words={detail.weeklyWords}
+              emptyLabel="今週はまだ単語がありません"
+            />
+            <StockedWordsSection
+              title={`これまでにストックした単語（${detail.allWords.length}語）`}
+              words={detail.allWords}
+              emptyLabel="まだ単語がありません"
+            />
           </div>
         )}
       </div>
