@@ -5,7 +5,7 @@ import { ProfileForm } from "@/components/profile-form";
 import type {
   FriendsDashboard,
   LeaderboardEntry,
-  MemberProfile,
+  MemberProfileDetail,
 } from "@/lib/friends-types";
 import {
   ChevronLeft,
@@ -319,7 +319,7 @@ function MemberProfilePanel({
   onBack: () => void;
   onEdit: () => void;
 }) {
-  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [detail, setDetail] = useState<MemberProfileDetail | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -329,15 +329,15 @@ function MemberProfilePanel({
     })
       .then(async (response) => {
         const data = (await response.json().catch(() => null)) as
-          | (MemberProfile & { profile?: MemberProfile; error?: string })
+          | (MemberProfileDetail & { error?: string })
           | null;
-        if (!response.ok || !data) {
+        if (!response.ok || !data?.profile) {
           throw new Error(data?.error ?? "プロフィールを読み込めませんでした。");
         }
-        return data.profile ?? data;
+        return data;
       })
       .then((data) => {
-        if (!cancelled) setProfile(data);
+        if (!cancelled) setDetail(data);
       })
       .catch((caught) => {
         if (!cancelled) {
@@ -383,34 +383,44 @@ function MemberProfilePanel({
           <p className="rounded-2xl bg-white p-5 text-center text-sm text-red-600">
             {error}
           </p>
-        ) : !profile ? (
+        ) : !detail ? (
           <FriendsLoading />
         ) : (
           <div className="mx-auto max-w-sm space-y-4">
             <section className="rounded-3xl bg-white p-6 text-center shadow-sm">
               <div className="flex justify-center">
                 <MemberAvatar
-                  name={profile.displayName}
-                  url={profile.avatarUrl}
+                  name={detail.profile.displayName}
+                  url={detail.profile.avatarUrl}
                   size="lg"
                 />
               </div>
               <h2 className="mt-4 text-xl font-semibold text-gray-900">
-                {profile.displayName}
+                {detail.profile.displayName}
               </h2>
               <p className="mt-2 text-sm text-gray-500">
-                週の目標 {profile.weeklyWordTarget}語
+                週の目標 {detail.profile.weeklyWordTarget}語
               </p>
             </section>
+            <StockedWordsSection
+              title={`今週ストックした単語（${formatWeek(detail.week.start, detail.week.end)}）`}
+              words={detail.weeklyWords}
+              emptyLabel="今週はまだ単語がありません"
+            />
+            <StockedWordsSection
+              title={`これまでにストックした単語（${detail.allWords.length}語）`}
+              words={detail.allWords}
+              emptyLabel="まだ単語がありません"
+            />
             <ProfileSection title="英語を勉強する目的">
               <p className="whitespace-pre-wrap text-sm leading-7 text-gray-700">
-                {profile.purpose}
+                {detail.profile.purpose}
               </p>
             </ProfileSection>
             <ProfileSection title="英語資格">
-              {profile.qualifications.length ? (
+              {detail.profile.qualifications.length ? (
                 <div className="flex flex-wrap gap-2">
-                  {profile.qualifications.map((item, index) => (
+                  {detail.profile.qualifications.map((item, index) => (
                     <span
                       key={`${item.type}-${index}`}
                       className="rounded-full bg-gray-100 px-3 py-1.5 text-sm text-gray-700"
@@ -424,9 +434,9 @@ function MemberProfilePanel({
               )}
             </ProfileSection>
             <ProfileSection title="海外歴">
-              {profile.overseasHistory.length ? (
+              {detail.profile.overseasHistory.length ? (
                 <div className="space-y-2">
-                  {profile.overseasHistory.map((item, index) => (
+                  {detail.profile.overseasHistory.map((item, index) => (
                     <p key={`${item.country}-${index}`} className="text-sm text-gray-700">
                       {item.country}・{item.duration}
                     </p>
@@ -440,6 +450,40 @@ function MemberProfilePanel({
         )}
       </div>
     </div>
+  );
+}
+
+function StockedWordsSection({
+  title,
+  words,
+  emptyLabel,
+}: {
+  title: string;
+  words: MemberProfileDetail["weeklyWords"];
+  emptyLabel: string;
+}) {
+  return (
+    <ProfileSection title={title}>
+      {words.length ? (
+        <ul className="space-y-3">
+          {words.map((item) => (
+            <li
+              key={`${item.word}-${item.createdAt}`}
+              className="rounded-xl bg-gray-50 px-4 py-3"
+            >
+              <p className="font-medium text-gray-900">{item.word}</p>
+              {item.meaning ? (
+                <p className="mt-1 text-sm leading-6 text-gray-500">
+                  {item.meaning}
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-gray-400">{emptyLabel}</p>
+      )}
+    </ProfileSection>
   );
 }
 

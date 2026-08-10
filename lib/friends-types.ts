@@ -8,6 +8,22 @@ export type OverseasHistory = {
   duration: string;
 };
 
+export type StockedWord = {
+  word: string;
+  meaning: string;
+  createdAt: string;
+};
+
+export type MemberProfileDetail = {
+  profile: MemberProfile;
+  week: {
+    start: string;
+    end: string;
+  };
+  weeklyWords: StockedWord[];
+  allWords: StockedWord[];
+};
+
 export type MemberProfile = {
   publicId: string;
   displayName: string;

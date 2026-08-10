@@ -1,4 +1,4 @@
-import { getPublicMemberProfile } from "@/lib/member-profiles";
+import { getMemberProfileDetail } from "@/lib/member-vocabulary";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -14,14 +14,14 @@ export async function GET(
 ) {
   try {
     const { publicId } = await context.params;
-    const profile = await getPublicMemberProfile(publicId);
-    if (!profile) {
+    const detail = await getMemberProfileDetail(publicId);
+    if (!detail) {
       return NextResponse.json(
         { error: "プロフィールが見つかりません" },
         { status: 404, headers: NO_STORE },
       );
     }
-    return NextResponse.json({ profile }, { headers: NO_STORE });
+    return NextResponse.json(detail, { headers: NO_STORE });
   } catch (error) {
     console.error("Failed to get public member profile:", error);
     return NextResponse.json(
