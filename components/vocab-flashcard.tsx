@@ -1,7 +1,7 @@
 "use client";
 
 import { PronunciationButton } from "@/components/pronunciation-button";
-import { VocabDetail } from "@/components/vocab-content";
+import { EntryTypeBadge, VocabDetail } from "@/components/vocab-content";
 import type { VocabularyItem } from "@/lib/vocabulary";
 import { ChevronLeft, ChevronRight, Hand } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
@@ -19,13 +19,30 @@ function TapHint() {
   );
 }
 
-function WordHeading({ word }: { word: string }) {
+function WordHeading({ item }: { item: VocabularyItem }) {
+  const isSentence = item.entryType === "sentence";
+
   return (
-    <div className="flex items-center justify-center gap-2 px-8">
-      <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-        {word}
-      </h1>
-      <PronunciationButton word={word} />
+    <div
+      className={`flex gap-2 px-6 ${
+        isSentence
+          ? "items-start text-left"
+          : "items-center justify-center text-center"
+      }`}
+    >
+      <div className="min-w-0 flex-1">
+        <EntryTypeBadge item={item} />
+        <h1
+          className={
+            isSentence
+              ? "mt-2 text-lg font-semibold leading-8 text-gray-900"
+              : "text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl"
+          }
+        >
+          {item.word}
+        </h1>
+      </div>
+      <PronunciationButton word={item.word} />
     </div>
   );
 }
@@ -123,14 +140,14 @@ export function VocabFlashcard({
         >
           {!isRevealed ? (
             <>
-              <WordHeading word={item.word} />
+              <WordHeading item={item} />
               <div className="absolute inset-x-0 bottom-12 flex justify-center">
                 <TapHint />
               </div>
             </>
           ) : (
             <div className="w-full animate-[fadeIn_0.25s_ease-out] overflow-y-auto px-8 py-10 text-left">
-              <WordHeading word={item.word} />
+              <WordHeading item={item} />
 
               <VocabDetail
                 item={item}

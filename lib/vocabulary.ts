@@ -1,8 +1,12 @@
+import { inferEntryType, type EntryType } from "@/lib/entry-type";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+export type { EntryType };
 
 export type VocabularyItem = {
   id: string;
   createdAt: string;
+  entryType: EntryType;
   word: string;
   meaning: string;
   synonyms: string;
@@ -33,50 +37,82 @@ function pickString(row: Record<string, unknown>, keys: string[]): string {
   return "";
 }
 
+function isJsonExampleString(value: string): boolean {
+  const trimmed = value.trim();
+  return trimmed.startsWith("{") && trimmed.endsWith("}");
+}
+
 function parseExampleField(value: unknown): {
   en: string;
   ja: string;
   note: string;
+  parsedAsJson: boolean;
 } {
   if (value == null) {
-    return { en: "", ja: "", note: "" };
+    return { en: "", ja: "", note: "", parsedAsJson: false };
   }
 
   let source: Record<string, unknown> | null = null;
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    if (!trimmed) return { en: "", ja: "", note: "" };
-    try {
-      const parsed: unknown = JSON.parse(trimmed);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        source = parsed as Record<string, unknown>;
-      } else {
-        return { en: trimmed, ja: "", note: "" };
+    if (!trimmed) {
+      return { en: "", ja: "", note: "", parsedAsJson: false };
+    }
+
+    if (isJsonExampleString(trimmed)) {
+      try {
+        const parsed: unknown = JSON.parse(trimmed);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          source = parsed as Record<string, unknown>;
+        }
+      } catch {
+        return { en: "", ja: "", note: "", parsedAsJson: true };
       }
-    } catch {
-      return { en: trimmed, ja: "", note: "" };
+    } else {
+      return { en: trimmed, ja: "", note: "", parsedAsJson: false };
     }
   } else if (typeof value === "object" && !Array.isArray(value)) {
     source = value as Record<string, unknown>;
   }
 
   if (!source) {
-    return { en: "", ja: "", note: "" };
+    return { en: "", ja: "", note: "", parsedAsJson: false };
   }
 
   return {
     en: pickString(source, ["en", "english", "example_en", "text"]),
     ja: pickString(source, ["ja", "japanese", "example_ja", "translation"]),
     note: pickString(source, ["note", "explanation", "comment"]),
+    parsedAsJson: true,
   };
+}
+
+function resolveExampleText(
+  parsed: { en: string; parsedAsJson: boolean },
+  rawValue: unknown,
+  legacyKeys: string[],
+  row: Record<string, unknown>,
+): string {
+  if (parsed.en) {
+    return parsed.en;
+  }
+
+  if (typeof rawValue === "string" && !parsed.parsedAsJson) {
+    return rawValue.trim();
+  }
+
+  return pickString(row, legacyKeys);
 }
 
 export function normalizeVocabularyRow(
   row: Record<string, unknown>,
 ): VocabularyItem {
-  const example1 = parseExampleField(row.example_1 ?? row.example1);
-  const example2 = parseExampleField(row.example_2 ?? row.example2);
+  const rawExample1 = row.example_1 ?? row.example1;
+  const rawExample2 = row.example_2 ?? row.example2;
+  const example1 = parseExampleField(rawExample1);
+  const example2 = parseExampleField(rawExample2);
+  const word = pickString(row, ["word", "expression", "phrase"]);
 
   const memo =
     pickString(row, ["memo", "notes", "comment"]) ||
@@ -86,16 +122,13 @@ export function normalizeVocabularyRow(
   return {
     id: pickString(row, ["id"]),
     createdAt: pickString(row, ["created_at", "createdAt"]),
-    word: pickString(row, ["word", "expression", "phrase"]),
+    entryType: inferEntryType(row.entry_type ?? row.entryType, word),
+    word,
     meaning: pickString(row, ["meaning", "meaning_ja", "translation"]),
     synonyms: pickString(row, ["synonyms", "similar_words", "related_words"]),
-    example1:
-      example1.en ||
-      pickString(row, ["example_1", "example_1_en", "example1_en"]),
+    example1: resolveExampleText(example1, rawExample1, ["example_1_en", "example1_en"], row),
     example1Ja: example1.ja,
-    example2:
-      example2.en ||
-      pickString(row, ["example_2", "example_2_en", "example2_en"]),
+    example2: resolveExampleText(example2, rawExample2, ["example_2_en", "example2_en"], row),
     example2Ja: example2.ja,
     memo,
   };

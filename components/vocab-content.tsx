@@ -1,4 +1,10 @@
 import type { VocabularyItem } from "@/lib/vocabulary";
+import {
+  getEntryTypeLabel,
+  getSynonymsLabel,
+  shouldShowExample1,
+  shouldShowExample2,
+} from "@/lib/entry-type";
 
 export function RichText({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -18,6 +24,16 @@ export function RichText({ text }: { text: string }) {
   );
 }
 
+export function EntryTypeBadge({ item }: { item: Pick<VocabularyItem, "entryType"> }) {
+  if (item.entryType === "word") return null;
+
+  return (
+    <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+      {getEntryTypeLabel(item.entryType)}
+    </span>
+  );
+}
+
 function parseSynonyms(synonyms: string): string[] {
   return synonyms
     .split(",")
@@ -25,13 +41,19 @@ function parseSynonyms(synonyms: string): string[] {
     .filter((s) => s.length > 0);
 }
 
-function SynonymsBlock({ synonyms }: { synonyms: string }) {
+function SynonymsBlock({
+  synonyms,
+  label,
+}: {
+  synonyms: string;
+  label: string;
+}) {
   const items = parseSynonyms(synonyms);
   if (items.length === 0) return null;
 
   return (
     <div className="mt-4 text-center">
-      <p className="text-xs font-medium text-gray-400">類語</p>
+      <p className="text-xs font-medium text-gray-400">{label}</p>
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         {items.map((synonym) => (
           <span
@@ -85,28 +107,52 @@ export function VocabDetail({
   memoLabel = "説明",
   className = "",
 }: VocabDetailProps) {
+  const showExample1 = shouldShowExample1(item);
+  const showExample2 = shouldShowExample2(item);
+
   return (
     <div className={className}>
+      {item.entryType !== "word" ? (
+        <div className="mb-4 flex justify-center">
+          <EntryTypeBadge item={item} />
+        </div>
+      ) : null}
+
       {item.meaning ? (
-        <p className="text-center text-lg leading-relaxed text-gray-900">
+        <p
+          className={`text-center leading-relaxed text-gray-900 ${
+            item.entryType === "sentence" ? "text-base" : "text-lg"
+          }`}
+        >
           {item.meaning}
         </p>
       ) : null}
 
-      {item.synonyms ? <SynonymsBlock synonyms={item.synonyms} /> : null}
+      {item.synonyms ? (
+        <SynonymsBlock
+          synonyms={item.synonyms}
+          label={getSynonymsLabel(item.entryType)}
+        />
+      ) : null}
 
-      <div className="mt-8 space-y-6">
-        <ExampleBlock
-          label="例文 1"
-          en={item.example1}
-          ja={item.example1Ja}
-        />
-        <ExampleBlock
-          label="例文 2"
-          en={item.example2}
-          ja={item.example2Ja}
-        />
-      </div>
+      {showExample1 || showExample2 ? (
+        <div className="mt-8 space-y-6">
+          {showExample1 ? (
+            <ExampleBlock
+              label={item.entryType === "sentence" ? "使い方の例" : "例文 1"}
+              en={item.example1}
+              ja={item.example1Ja}
+            />
+          ) : null}
+          {showExample2 ? (
+            <ExampleBlock
+              label="例文 2"
+              en={item.example2}
+              ja={item.example2Ja}
+            />
+          ) : null}
+        </div>
+      ) : null}
 
       {item.memo ? (
         <div className="mt-6 rounded-2xl bg-gray-100 px-5 py-4 text-sm leading-7 text-gray-700">

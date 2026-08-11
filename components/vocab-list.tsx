@@ -1,7 +1,9 @@
 "use client";
 
+import { EntryTypeBadge } from "@/components/vocab-content";
 import { SwipeableListRow } from "@/components/swipeable-list-row";
 import type { VocabularyItem } from "@/lib/vocabulary";
+import { getSynonymsLabel } from "@/lib/entry-type";
 import { isThisWeek } from "@/lib/quiz-filters";
 import type { ProgressStore } from "@/lib/word-progress";
 import { getMistakeCount } from "@/lib/word-progress";
@@ -137,7 +139,20 @@ export function VocabList({
                 className="flex min-w-0 flex-1 flex-col gap-1 px-4 py-4 text-left transition-colors hover:bg-gray-50"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="font-medium text-gray-900">{item.word}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1">
+                      <EntryTypeBadge item={item} />
+                    </div>
+                    <span
+                      className={`block text-gray-900 ${
+                        item.entryType === "sentence"
+                          ? "line-clamp-2 text-sm leading-6"
+                          : "truncate font-medium"
+                      }`}
+                    >
+                      {item.word}
+                    </span>
+                  </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${mistakeBadgeClass(mistakes)}`}
                   >
@@ -151,7 +166,7 @@ export function VocabList({
                 ) : null}
                 {item.synonyms ? (
                   <span className="truncate text-xs text-gray-400">
-                    類語: {item.synonyms}
+                    {getSynonymsLabel(item.entryType)}: {item.synonyms}
                   </span>
                 ) : null}
                 <div className="flex items-center gap-2 text-xs text-gray-400">
